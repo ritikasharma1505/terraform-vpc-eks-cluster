@@ -1,4 +1,4 @@
-# Production-Ready Amazon EKS Cluster on Custom VPC using Terraform
+# Production-Ready Amazon EKS Cluster on Custom VPC using Terraform - Deploy Tetris Game
 
 ## Project Overview
 
@@ -9,6 +9,8 @@ The project follows Infrastructure as Code (IaC) principles and implements AWS b
 ---
 
 ## Architecture
+
+![alt text](demo-images-0106/architecture-diagram.png)
 
 ### Infrastructure Components
 
@@ -270,6 +272,7 @@ AWS Console → Systems Manager → Session Manager
 Connect to the jump server.
 
 Verify connectivity:
+Update kubeconfig:
 
 ```bash
 aws eks update-kubeconfig \
@@ -277,10 +280,71 @@ aws eks update-kubeconfig \
 --name eks-prod-cluster
 ```
 
-Check cluster:
+Verify current context:
+
+```bash
+kubectl config current-context
+```
+
+View available contexts:
+
+```bash
+kubectl config get-contexts
+```
+
+Switch context manually (if multiple clusters exist):
+
+```bash
+kubectl config use-context arn:aws:eks:us-east-2:<account-id>:cluster/eks-prod-cluster
+```
+
+---
+
+## Verify Cluster Connectivity
+
+```bash
+kubectl cluster-info
+```
 
 ```bash
 kubectl get nodes
+```
+
+```bash
+kubectl describe nodes
+```
+
+---
+
+## Verify EKS Addons
+
+List addon pods:
+
+```bash
+kubectl get pods -n kube-system
+```
+
+Check addon health:
+
+```bash
+kubectl get pods -n kube-system -o wide
+```
+
+Verify addon installation from AWS:
+
+```bash
+aws eks list-addons \
+--cluster-name eks-prod-cluster \
+--region us-east-2
+```
+
+Describe specific addon:
+
+```bash
+aws eks describe-addon \
+--cluster-name eks-prod-cluster \
+--addon-name aws-ebs-csi-driver \
+--region us-east-2
 ```
 
 ---
@@ -304,6 +368,7 @@ Worker nodes should be in Ready state.
 Deploy Tetris application:
 
 ```bash
+cd k8s-manifest/
 kubectl apply -f tetris-deployment.yaml
 kubectl apply -f tetris-service.yaml
 ```
@@ -315,7 +380,65 @@ kubectl get pods
 kubectl get svc
 ```
 
+Detailed pod information:
+
+```bash
+kubectl get pods -o wide
+```
+
+Describe pod:
+
+```bash
+kubectl describe pod <pod-name>
+```
+
+View logs:
+
+```bash
+kubectl logs <pod-name>
+```
+
 ---
+
+Delete deployment:
+
+```bash
+kubectl delete deployment tetris
+```
+
+Delete service:
+
+```bash
+kubectl delete svc tetris-service
+```
+
+Delete manifests directly:
+
+```bash
+kubectl delete -f tetris-deployment.yaml
+kubectl delete -f tetris-service.yaml
+```
+
+Delete all application resources:
+
+```bash
+kubectl delete -f .
+```
+
+Verify cleanup:
+
+```bash
+kubectl get deployments
+kubectl get svc
+kubectl get pods
+```
+
+Expected:
+
+```text
+No resources found
+```
+
 
 # Challenges Faced and Troubleshooting
 
